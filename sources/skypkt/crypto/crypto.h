@@ -40,13 +40,13 @@
 // basic types and platform-dependant fast rotation and byte swapping functions. I wish there was a bit count operation too...
 
 #ifndef u8
-	#define u8				unsigned char
+	#define u8  __uint8_t
 #endif
 #ifndef u16
-	#define u16				unsigned short
+	#define u16 __uint16_t
 #endif
 #ifndef u32
-	#define u32				unsigned long
+	#define u32 __uint32_t
 #endif
 
 #if defined(__GNUC__)
@@ -291,7 +291,10 @@ static __forceinline BITCOUNT_TYPE __cdecl bit_count (BITCOUNT_TYPE n)
 	}
 	
 #else
-	
+	#if defined(__MACH__) && defined(__APPLE__)
+		#define bswap32 __builtin_bswap32
+	#endif
+
 	#ifndef bswap32					/* should be a faster function implementation for variables */
 		#define bswap32(x)			((rotl32 ((u32)(x), 8) & 0x00FF00FFU) | (rotr32 ((u32)(x), 8) & 0xFF00FF00U))
 	#endif
@@ -316,7 +319,10 @@ static __forceinline BITCOUNT_TYPE __cdecl bit_count (BITCOUNT_TYPE n)
 			pthread_t thread;
 			return pthread_create (&thread, 0, func, arg);
 		}
-		
+
+		/* for gcc on mac osx */
+		static __forceinline u32 _lrotl (u32 x, u32 r) { return (x << r) | (x >> (32-r)); }
+		static __forceinline u32 _lrotr (u32 x, u32 r) { return (x >> r) | (x << (32-r)); }
 	#else
 		EXTERN u64			clock_counter (void);
 		#include <stdint.h>
@@ -336,7 +342,7 @@ static __forceinline BITCOUNT_TYPE __cdecl bit_count (BITCOUNT_TYPE n)
 			pthread_t thread;
 			return pthread_create (&thread, 0, func, arg);
 		}
-		
+
 	#endif	/* APPLE */
 
 #endif
